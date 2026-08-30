@@ -1,4 +1,4 @@
-﻿# 🧠 Bare-Metal TinyML Inference Engine on ARM Cortex-M4 (STM32F429)
+﻿# Bare-Metal TinyML Inference Engine on ARM Cortex-M4 (STM32F429)
 
 <p align="center">
   <img src="assets/board.png" alt="STM32F429I-DISCO Discovery Board" width="600">
@@ -16,38 +16,38 @@
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
-- [Overview](#-overview)
-- [Hardware Target Specifications](#-hardware-target-specifications)
-- [Physical Demonstration](#-physical-demonstration)
-- [End-to-End System Pipeline](#-end-to-end-system-pipeline)
-- [Phase 1: Neural Network & PyTorch Training](#-phase-1-neural-network--pytorch-training)
-- [Phase 2: INT8 Post-Training Quantization (PTQ)](#-phase-2-int8-post-training-quantization-ptq)
-- [Phase 3: Bare-Metal Silicon & Register Drivers](#-phase-3-bare-metal-silicon--register-drivers)
-- [Phase 4: DSP Preprocessing & Touch GUI](#-phase-4-dsp-preprocessing--touch-gui)
-- [Experimental Benchmarks & Energy Profile](#-experimental-benchmarks--energy-profile)
-- [Comparative Analysis with Industry Solutions](#-comparative-analysis-with-industry-solutions)
-- [Project Directory Structure](#-project-directory-structure)
-- [Quickstart & Reproduction Guide](#-quickstart--reproduction-guide)
-- [Author & Acknowledgments](#-author--acknowledgments)
+- [Overview](#overview)
+- [Hardware Target Specifications](#hardware-target-specifications)
+- [Physical Demonstration](#physical-demonstration)
+- [End-to-End System Pipeline](#end-to-end-system-pipeline)
+- [Phase 1: Neural Network & PyTorch Training](#phase-1-neural-network--pytorch-training)
+- [Phase 2: INT8 Post-Training Quantization (PTQ)](#phase-2-int8-post-training-quantization-ptq)
+- [Phase 3: Bare-Metal Silicon & Register Drivers](#phase-3-bare-metal-silicon--register-drivers)
+- [Phase 4: DSP Preprocessing & Touch GUI](#phase-4-dsp-preprocessing--touch-gui)
+- [Experimental Benchmarks & Energy Profile](#experimental-benchmarks--energy-profile)
+- [Comparative Analysis with Industry Solutions](#comparative-analysis-with-industry-solutions)
+- [Project Directory Structure](#project-directory-structure)
+- [Quickstart & Reproduction Guide](#quickstart--reproduction-guide)
+- [Author & Acknowledgments](#author--acknowledgments)
 
 ---
 
-## 📌 Overview
+## Overview
 
 This repository contains the complete implementation of a **self-contained, bare-metal TinyML inference engine** running on the **STM32F429I-DISC1** evaluation board. The system performs real-time handwriting recognition across **47 alphanumeric classes** (`0-9`, `A-Z`, `a-t`) from the **EMNIST Balanced** dataset drawn directly by the user on the integrated $2.4''$ QVGA touchscreen.
 
-### 🌟 Core Engineering Principles
+### Core Engineering Principles
 
 1. **Pure Bare-Metal C (No OS, No Vendor HAL, No CMSIS-NN):** Every peripheral driver (RCC, SPI, I2C, GPIO, NVIC, Flash) was written from scratch directly to memory-mapped registers (MMIO) without calling ST HAL, ST LL, FreeRTOS, or proprietary runtimes like X-CUBE-AI or TensorFlow Lite Micro.
-2. **Formally Verified INT8 Arithmetic:** Weights and activations are quantized to signed 8-bit integers (`int8_t`). Dot products are computed with 32-bit accumulators (`int32_t`), mathematically eliminating any possibility of register overflow.
+2. **Formally Verified INT8 Arithmetic:** Weights and activations are quantized to signed 8-bit integers (`int8_t`). Dot products are computed with 32-bit accumulators (`int32\_t`), mathematically eliminating any possibility of register overflow.
 3. **Zero Dynamic Memory Allocation:** Absolutely no `malloc()` or `free()`. Memory footprint is 100% static, deterministic, and free of heap fragmentation or memory leaks.
 4. **Center-of-Mass Spatial Normalization:** Integrated digital signal processing calculates the 2D barycenter of the user's drawing in real-time, achieving translation and scale invariance.
 
 ---
 
-## 🔬 Hardware Target Specifications
+## Hardware Target Specifications
 
 <p align="center">
   <img src="assets/board.png" alt="STM32F429 Discovery Board Overview" width="480">
@@ -65,7 +65,7 @@ This repository contains the complete implementation of a **self-contained, bare
 
 ---
 
-## 📷 Physical Demonstration
+## Physical Demonstration
 
 Below is a real-world test capture on the physical STM32F429I-DISC1 board:
 
@@ -77,7 +77,7 @@ Below is a real-world test capture on the physical STM32F429I-DISC1 board:
 
 ---
 
-## 🔄 End-to-End System Pipeline
+## End-to-End System Pipeline
 
 ```
   ┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
@@ -94,7 +94,7 @@ Below is a real-world test capture on the physical STM32F429I-DISC1 board:
 
 ---
 
-## 🧠 Phase 1: Neural Network & PyTorch Training
+## Phase 1: Neural Network & PyTorch Training
 
 ### Dataset: EMNIST Balanced (47 Classes)
 The model is trained on the NIST **EMNIST Balanced** split ($112,800$ training images, $18,800$ test images):
@@ -116,7 +116,7 @@ The model is trained on the NIST **EMNIST Balanced** split ($112,800$ training i
 
 ---
 
-## ⚡ Phase 2: INT8 Post-Training Quantization (PTQ)
+## Phase 2: INT8 Post-Training Quantization (PTQ)
 
 ### Mathematical Derivation of Symmetric Uniform PTQ
 To eliminate costly floating-point computations, weights ($W$) and inputs ($X$) are projected onto signed 8-bit integers $\mathbb{Z} \cap [-128, 127]$:
@@ -130,11 +130,11 @@ $$Y_j \approx (S_W \cdot S_X) \cdot \left[ \sum_{i=1}^{N} W_{q,ji} \cdot X_{q,i}
 ### Mathematical Proof of Overflow Prevention on 32-bit Accumulators
 For the largest dense layer ($N = 784$ inputs), assuming maximum absolute saturation ($|W_q| = 127, |X_q| = 127$):
 
-$$\text{Worst-Case Accumulator Value} = \sum_{i=1}^{784} (127 \times 127) = 784 \times 16,129 = \mathbf{12,644,736}$$
+$$\text{Worst-Case Value} = \sum_{i=1}^{784} (127 \times 127) = 784 \times 16,129 = \mathbf{12,644,736}$$
 
-$$\text{Maximum Capacity of \texttt{int32\_t}} = 2^{31} - 1 = \mathbf{2,147,483,647}$$
+$$\text{Maximum 32-bit Integer Capacity} = 2^{31} - 1 = \mathbf{2,147,483,647}$$
 
-$$\text{Accumulator Saturation Ratio} = \frac{12,644,736}{2,147,483,647} \approx \mathbf{0.588\%}$$
+$$\text{Saturation Ratio} = \frac{12,644,736}{2,147,483,647} \approx \mathbf{0.588\%}$$
 
 > **Conclusion:** An arithmetic overflow on an ARM 32-bit accumulator is **mathematically impossible**.
 
@@ -152,7 +152,7 @@ $$\text{Accumulator Saturation Ratio} = \frac{12,644,736}{2,147,483,647} \approx
 
 ---
 
-## 🛠️ Phase 3: Bare-Metal Silicon & Register Drivers
+## Phase 3: Bare-Metal Silicon & Register Drivers
 
 ### 1. GNU Linker Script (`stm32f429zi.ld`)
 Defines the memory map partitioning between non-volatile Flash ($2\text{ MB}$) and static RAM ($192\text{ KB}$ user SRAM):
@@ -163,11 +163,11 @@ Defines the memory map partitioning between non-volatile Flash ($2\text{ MB}$) a
   <em>Figure 6: VS Code view of the bare-metal Linker Script <code>stm32f429zi.ld</code>.</em>
 </p>
 
-### 2. Séquence de Démarrage (`startup.c`)
+### 2. Startup Routine (`startup.c`)
 1. **Interrupt Vector Table:** Placed at `.isr_vector` ($0\text{x}08000000$) with initial Stack Pointer (`&_estack`) and handler pointers.
 2. **FPU Coprocessor Enabling:** Enables full access to CP10 and CP11 coprocessors in `SCB->CPACR` to prevent `HardFault / NOCP` exceptions:
    ```c
-   *((volatile uint32_t *)0xE000ED88) |= ((3UL << 20) | (3UL << 22)); // SCB->CPACR
+   *((volatile uint32\_t *)0xE000ED88) |= ((3UL << 20) | (3UL << 22)); // SCB->CPACR
    __asm__ volatile ("dsb \n isb");
    ```
 3. **Memory Initialization:** Copies `.data` section from Flash (LMA) to SRAM (VMA) and zeroes out the `.bss` section in RAM.
@@ -188,7 +188,7 @@ $$f_{\text{SYSCLK}} = \frac{f_{\text{VCO}}}{\text{PLLP}} = \frac{336\text{ MHz}}
 ### 4. Flash Access Control & 5 Wait States
 Because Flash memory cannot be accessed in 1 cycle at $168\text{ MHz}$, `FLASH_ACR` must be configured with **5 Wait States (5WS)** plus prefetch and cache buffers **before** switching the clock:
 ```c
-*((volatile uint32_t *)0x40023C00) = 0x705; // FLASH_ACR: LATENCY=5, PRFTEN, ICEN, DCEN
+*((volatile uint32\_t *)0x40023C00) = 0x705; // FLASH_ACR: LATENCY=5, PRFTEN, ICEN, DCEN
 ```
 
 ### 5. SPI5 Display Driver (ILI9341) with Hardware `RXNE` Synchronization
@@ -202,11 +202,11 @@ To prevent race conditions where Chip Select (`CSX`) is de-asserted before the l
 
 ---
 
-## 📐 Phase 4: DSP Preprocessing & Touch GUI
+## Phase 4: DSP Preprocessing & Touch GUI
 
 ### Scale Factor & Grid Projection ($K = 7$)
 The $240 \times 320$ TFT display allows a maximum square drawing area of $196 \times 196$ pixels ($K = 7$ scaling factor for $28 \times 28$ cells):
-$$\text{col} = \left\lfloor \frac{t_x - \text{BOX\_X}}{7} \right\rfloor, \quad \text{row} = \left\lfloor \frac{t_y - \text{BOX\_Y}}{7} \right\rfloor$$
+$$\text{col} = \left\lfloor \frac{t_x - \text{BOX}_{\text{X}}}{7} \right\rfloor, \quad \text{row} = \left\lfloor \frac{t_y - \text{BOX}_{\text{Y}}}{7} \right\rfloor$$
 
 ### Center-of-Mass (Barycenter) Normalization
 Calculates the spatial center of mass $(\bar{r}, \bar{c})$ and shifts the drawn character to the exact center $(14, 14)$:
@@ -220,7 +220,7 @@ The PyTorch `torchvision.datasets.EMNIST` loader stores images transposed by def
 
 ---
 
-## 📊 Experimental Benchmarks & Energy Profile
+## Experimental Benchmarks & Energy Profile
 
 <p align="center">
   <img src="assets/benchmark.png" alt="GCC Compilation and ARM Size Terminal Output" width="620">
@@ -254,11 +254,11 @@ Under $V_{\text{DD}} = 3.3\text{ V}$ at $168\text{ MHz}$, the STM32F429 draws $I
 $$E_{\text{inference}} = P \times t_{\text{inf}} = 115.5\text{ mW} \times 1.22\text{ ms} = \mathbf{141\ \mu\text{J}} \quad (0.141\text{ millijoules})$$
 
 On a standard $1,000\text{ mAh}$ ($3.7\text{ V} = 13,320\text{ Joules}$) Li-Ion battery:
-$$\text{Total Inferences on Single Charge} = \frac{13,320\text{ J}}{0.000141\text{ J}} \approx \mathbf{94.4\text{ Million Inferences}}$$
+$$\text{Total Inferences} = \frac{13,320\text{ J}}{0.000141\text{ J}} \approx \mathbf{94.4\text{ Million Inferences}}$$
 
 ---
 
-## 🏆 Comparative Analysis with Industry Solutions
+## Comparative Analysis with Industry Solutions
 
 | Criteria | Our Bare-Metal Engine | ST X-CUBE-AI | TensorFlow Lite Micro |
 |---|---|---|---|
@@ -270,7 +270,7 @@ $$\text{Total Inferences on Single Charge} = \frac{13,320\text{ J}}{0.000141\tex
 
 ---
 
-## 📁 Project Directory Structure
+## Project Directory Structure
 
 ```text
 TinyML-STM32-BareMetal/
@@ -296,7 +296,7 @@ TinyML-STM32-BareMetal/
 
 ---
 
-## 🚀 Quickstart & Reproduction Guide
+## Quickstart & Reproduction Guide
 
 ### 1. Prerequisites
 - **Python 3.10+** (`pip install torch torchvision numpy`)
@@ -342,7 +342,7 @@ st-flash write main.hex 0x08000000
 
 ---
 
-## 👨‍💻 Author & Acknowledgments
+## Author & Acknowledgments
 
 - **Author:** **M. Ilyas AIT OUAILAL** — *Embedded Systems & Edge AI Engineer*
 - **Institution:** Institut National des Postes et Télécommunications (**INPT / ANRT**)
@@ -352,5 +352,5 @@ st-flash write main.hex 0x08000000
 ---
 
 <p align="center">
-  <b>⭐ If you found this project helpful, feel free to give it a star on GitHub! ⭐</b>
+  <b> If you found this project helpful, feel free to give it a star on GitHub! </b>
 </p>

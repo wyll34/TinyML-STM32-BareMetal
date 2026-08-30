@@ -30,7 +30,7 @@
 - [Comparative Analysis with Industry Solutions](#comparative-analysis-with-industry-solutions)
 - [Project Directory Structure](#project-directory-structure)
 - [Quickstart & Reproduction Guide](#quickstart--reproduction-guide)
-- [Author & Acknowledgments](#author--acknowledgments)
+
 
 ---
 

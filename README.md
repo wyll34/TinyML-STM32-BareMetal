@@ -36,7 +36,7 @@
 
 ## Overview
 
-This repository contains the complete implementation of a **self-contained, bare-metal TinyML inference engine** running on the **STM32F429I-DISC1** evaluation board. The system performs real-time handwriting recognition across **47 alphanumeric classes** (`0-9`, `A-Z`, `a-t`) from the **EMNIST Balanced** dataset drawn directly by the user on the integrated $2.4''$ QVGA touchscreen.
+This repository contains the complete implementation of a **self-contained, bare-metal TinyML inference engine** running on the **STM32F429I-DISC1** evaluation board. The system performs real-time handwriting recognition across **47 alphanumeric classes** (`0-9`, `A-Z`, `a-t`) from the **EMNIST Balanced** dataset drawn directly by the user on the integrated 2.4" QVGA touchscreen.
 
 ### Core Engineering Principles
 
@@ -56,12 +56,12 @@ This repository contains the complete implementation of a **self-contained, bare
 | Component | Technical Specification | Role in Project |
 |---|---|---|
 | **MCU** | **STM32F429ZIT6** (ARM 32-bit Cortex-M4 + FPU) | Core processor executing INT8 MLP inference |
-| **Clock Tree** | HSE $8\text{ MHz}$ quartz $\to$ PLL $\to$ **$168\text{ MHz}$** | High-speed processing and bus clocking |
-| **Flash Memory** | **$2\text{ MB}$** (Sector-based, $0\text{x}08000000$) | Stores code, vector table, and quantized weights (`.rodata`) |
-| **SRAM Memory** | **$256\text{ KB}$** (SRAM1/2/3 + CCM, $0\text{x}20000000$) | Canvas grid ($28\times28$) and intermediate buffers (`.bss`) |
-| **Display** | **$2.4''$ TFT LCD QVGA ($240\times320$)** (ILI9341) | Interactive user drawing canvas & prediction display |
+| **Clock Tree** | HSE 8 MHz quartz -> PLL -> **168 MHz** | High-speed processing and bus clocking |
+| **Flash Memory** | **2 MB** (Sector-based, 0x08000000) | Stores code, vector table, and quantized weights (`.rodata`) |
+| **SRAM Memory** | **256 KB** (SRAM1/2/3 + CCM, 0x20000000) | Canvas grid (28x28) and intermediate buffers (`.bss`) |
+| **Display** | **2.4" TFT LCD QVGA (240x320)** (ILI9341) | Interactive user drawing canvas & prediction display |
 | **Digitizer** | **4-wire Resistive Touch Controller** (STMPE811) | Finger contact detection and coordinate sampling |
-| **Protocols** | **SPI5** ($21\text{ Mbit/s}$) & **I2C3** ($100\text{ kHz}$) | High-speed display streaming & touch event polling |
+| **Protocols** | **SPI5** (21 Mbit/s) & **I2C3** (100 kHz) | High-speed display streaming & touch event polling |
 
 ---
 
@@ -72,7 +72,7 @@ Below is a real-world test capture on the physical STM32F429I-DISC1 board:
 <p align="center">
   <img src="assets/demo.jpg" alt="Physical demonstration on STM32F429" width="520">
   <br>
-  <em>Figure 2: Real-time inference on STM32 hardware. The user draws character 'Y' on the touch canvas; the system centers the drawing, transposes it, runs INT8 inference in $1.22\text{ ms}$, and displays <code>PRED: Y (ALT: T)</code>.</em>
+  <em>Figure 2: Real-time inference on STM32 hardware. The user draws character 'Y' on the touch canvas; the system centers the drawing, transposes it, runs INT8 inference in 1.22 ms, and displays <code>PRED: Y (ALT: T)</code>.</em>
 </p>
 
 ---
@@ -97,21 +97,21 @@ Below is a real-world test capture on the physical STM32F429I-DISC1 board:
 ## Phase 1: Neural Network & PyTorch Training
 
 ### Dataset: EMNIST Balanced (47 Classes)
-The model is trained on the NIST **EMNIST Balanced** split ($112,800$ training images, $18,800$ test images):
+The model is trained on the NIST **EMNIST Balanced** split (112,800 training images, 18,800 test images):
 - **10 Digits:** `0, 1, 2, 3, 4, 5, 6, 7, 8, 9` (Classes 0–9)
 - **26 Uppercase Letters:** `A, B, C, ..., Z` (Classes 10–35)
 - **11 Lowercase Letters:** `a, b, d, e, f, g, h, n, q, r, t` (Classes 36–46)
 
 ### Model Topology (Multi-Layer Perceptron)
-- **Input Layer:** $784$ features ($28 \times 28$ grayscale pixels, values $[0, 1]$).
-- **Hidden Layer:** $128$ neurons with **ReLU** activation ($\max(0, x)$).
-- **Output Layer:** $47$ neurons (raw logits) followed by an **ArgMax** operation.
-- **Total Parameters:** $128 \times 784 + 128 + 47 \times 128 + 47 = \mathbf{106,543\text{ parameters}}$.
+- **Input Layer:** 784 features (28x28 grayscale pixels, values [0, 1]).
+- **Hidden Layer:** 128 neurons with **ReLU** activation (max(0, x)).
+- **Output Layer:** 47 neurons (raw logits) followed by an **ArgMax** operation.
+- **Total Parameters:** 128 * 784 + 128 + 47 * 128 + 47 = 106,543 parameters.
 
 <p align="center">
   <img src="assets/terminal_train.png" alt="PyTorch Training Console Session" width="580">
   <br>
-  <em>Figure 3: PyTorch training console session (<code>python3 train.py</code>). The model converges to <b>82.35% test accuracy</b> in 5 epochs with Adam optimizer ($\eta = 10^{-3}$).</em>
+  <em>Figure 3: PyTorch training console session (<code>python3 train.py</code>). The model converges to <b>82.35% test accuracy</b> in 5 epochs with Adam optimizer (lr = 0.001).</em>
 </p>
 
 ---
@@ -119,16 +119,16 @@ The model is trained on the NIST **EMNIST Balanced** split ($112,800$ training i
 ## Phase 2: INT8 Post-Training Quantization (PTQ)
 
 ### Mathematical Derivation of Symmetric Uniform PTQ
-To eliminate costly floating-point computations, weights ($W$) and inputs ($X$) are projected onto signed 8-bit integers $\mathbb{Z} \cap [-128, 127]$:
+To eliminate costly floating-point computations, weights (W) and inputs (X) are projected onto signed 8-bit integers [-128, 127]:
 
 $$S_W = \frac{\max |W|}{127}, \quad S_X = \frac{\max |X|}{127}, \quad S_B = S_W \cdot S_X$$
 
-The matrix multiplication $Y = W \cdot X + B$ becomes an integer dot product scaled by a constant factor:
+The matrix multiplication Y = W * X + B becomes an integer dot product scaled by a constant factor:
 
 $$Y_j \approx (S_W \cdot S_X) \cdot \left[ \sum_{i=1}^{N} W_{q,ji} \cdot X_{q,i} + B_{q,j} \right]$$
 
 ### Mathematical Proof of Overflow Prevention on 32-bit Accumulators
-For the largest dense layer ($N = 784$ inputs), assuming maximum absolute saturation ($|W_q| = 127, |X_q| = 127$):
+For the largest dense layer (N = 784 inputs), assuming maximum absolute saturation (|W_q| = 127, |X_q| = 127):
 
 $$\text{Worst-Case Value} = \sum_{i=1}^{784} (127 \times 127) = 784 \times 16,129 = \mathbf{12,644,736}$$
 
@@ -155,7 +155,7 @@ $$\text{Saturation Ratio} = \frac{12,644,736}{2,147,483,647} \approx \mathbf{0.5
 ## Phase 3: Bare-Metal Silicon & Register Drivers
 
 ### 1. GNU Linker Script (`stm32f429zi.ld`)
-Defines the memory map partitioning between non-volatile Flash ($2\text{ MB}$) and static RAM ($192\text{ KB}$ user SRAM):
+Defines the memory map partitioning between non-volatile Flash (2 MB) and static RAM (192 KB user SRAM):
 
 <p align="center">
   <img src="assets/linker_script.png" alt="Linker Script in VS Code" width="580">
@@ -164,7 +164,7 @@ Defines the memory map partitioning between non-volatile Flash ($2\text{ MB}$) a
 </p>
 
 ### 2. Startup Routine (`startup.c`)
-1. **Interrupt Vector Table:** Placed at `.isr_vector` ($0\text{x}08000000$) with initial Stack Pointer (`&_estack`) and handler pointers.
+1. **Interrupt Vector Table:** Placed at `.isr_vector` (0x08000000) with initial Stack Pointer (`&_estack`) and handler pointers.
 2. **FPU Coprocessor Enabling:** Enables full access to CP10 and CP11 coprocessors in `SCB->CPACR` to prevent `HardFault / NOCP` exceptions:
    ```c
    *((volatile uint32\_t *)0xE000ED88) |= ((3UL << 20) | (3UL << 22)); // SCB->CPACR
@@ -172,8 +172,8 @@ Defines the memory map partitioning between non-volatile Flash ($2\text{ MB}$) a
    ```
 3. **Memory Initialization:** Copies `.data` section from Flash (LMA) to SRAM (VMA) and zeroes out the `.bss` section in RAM.
 
-### 3. PLL Clock Tree Synthesis ($168\text{ MHz}$)
-Configures the Phase-Locked Loop from the external $8\text{ MHz}$ HSE crystal:
+### 3. PLL Clock Tree Synthesis (168 MHz)
+Configures the Phase-Locked Loop from the external 8 MHz HSE crystal:
 
 <p align="center">
   <img src="assets/datasheet_rm0090_pll.png" alt="Datasheet RM0090 PLL Register" width="580">
@@ -186,7 +186,7 @@ $$f_{\text{VCO}} = f_{\text{HSE}} \times \left( \frac{\text{PLLN}}{\text{PLLM}} 
 $$f_{\text{SYSCLK}} = \frac{f_{\text{VCO}}}{\text{PLLP}} = \frac{336\text{ MHz}}{2} = \mathbf{168\text{ MHz}}$$
 
 ### 4. Flash Access Control & 5 Wait States
-Because Flash memory cannot be accessed in 1 cycle at $168\text{ MHz}$, `FLASH_ACR` must be configured with **5 Wait States (5WS)** plus prefetch and cache buffers **before** switching the clock:
+Because Flash memory cannot be accessed in 1 cycle at 168 MHz, `FLASH_ACR` must be configured with **5 Wait States (5WS)** plus prefetch and cache buffers **before** switching the clock:
 ```c
 *((volatile uint32\_t *)0x40023C00) = 0x705; // FLASH_ACR: LATENCY=5, PRFTEN, ICEN, DCEN
 ```
@@ -204,19 +204,19 @@ To prevent race conditions where Chip Select (`CSX`) is de-asserted before the l
 
 ## Phase 4: DSP Preprocessing & Touch GUI
 
-### Scale Factor & Grid Projection ($K = 7$)
-The $240 \times 320$ TFT display allows a maximum square drawing area of $196 \times 196$ pixels ($K = 7$ scaling factor for $28 \times 28$ cells):
+### Scale Factor & Grid Projection (K = 7)
+The 240x320 TFT display allows a maximum square drawing area of 196x196 pixels (K = 7 scaling factor for 28x28 cells):
 $$\text{col} = \left\lfloor \frac{t_x - \text{BOX}_{\text{X}}}{7} \right\rfloor, \quad \text{row} = \left\lfloor \frac{t_y - \text{BOX}_{\text{Y}}}{7} \right\rfloor$$
 
 ### Center-of-Mass (Barycenter) Normalization
-Calculates the spatial center of mass $(\bar{r}, \bar{c})$ and shifts the drawn character to the exact center $(14, 14)$:
+Calculates the spatial center of mass (center_r, center_c) and shifts the drawn character to the exact center (14, 14):
 
 $$M = \sum_{r=0}^{27} \sum_{c=0}^{27} I(r, c), \quad \bar{r} = \frac{1}{M}\sum r \cdot I(r, c), \quad \bar{c} = \frac{1}{M}\sum c \cdot I(r, c)$$
 
 $$\Delta r = 14 - \lfloor \bar{r} \rceil, \quad \Delta c = 14 - \lfloor \bar{c} \rceil$$
 
 ### EMNIST Transposition Correction
-The PyTorch `torchvision.datasets.EMNIST` loader stores images transposed by default \cite{cohen2017emnist}. The engine applies matrix transposition $I_{\text{in}}(r, c) = I_{\text{norm}}(c, r)$ to align finger drawings with the training domain.
+The PyTorch `torchvision.datasets.EMNIST` loader stores images transposed by default . The engine applies matrix transposition `I_in[r][c] = I_norm[c][r]` to align finger drawings with the training domain.
 
 ---
 
@@ -232,28 +232,28 @@ The PyTorch `torchvision.datasets.EMNIST` loader stores images transposed by def
 
 | Memory Region | Physical Capacity | Used by Binary | Percentage Used | Function |
 |---|---|---|---|---|
-| **Flash (`.text` + `.rodata`)** | $2,048\text{ KB}$ | **$112,728\text{ bytes}$** ($110.1\text{ KB}$) | **$5.38\%$** | Code, interrupt vectors, and $104\text{ KB}$ quantized weights |
-| **SRAM (`.data` + `.bss`)** | $256\text{ KB}$ | **$2,352\text{ bytes}$** ($2.30\text{ KB}$) | **$0.92\%$** | Drawing buffer ($784\text{ B}$) + Normalized canvas ($1,568\text{ B}$) |
+| **Flash (`.text` + `.rodata`)** | 2,048 KB | **112,728 bytes** (110.1 KB) | **5.38%** | Code, interrupt vectors, and 104 KB quantized weights |
+| **SRAM (`.data` + `.bss`)** | 256 KB | **2,352 bytes** (2.30 KB) | **0.92%** | Drawing buffer (784 B) + Normalized canvas (1,568 B) |
 
 ### Latency Decomposition at 168 MHz
 
-| Pipeline Step | CPU Cycles | Execution Time ($\mu\text{s}$) | Percentage of Inference |
+| Pipeline Step | CPU Cycles | Execution Time (µs) | Percentage of Inference |
 |---|---|---|---|
-| 1. Center-of-Mass Normalization | $18,400$ | $109.5\,\mu\text{s}$ | $8.9\%$ |
-| 2. EMNIST Matrix Transposition | $3,200$ | $19.0\,\mu\text{s}$ | $1.6\%$ |
-| 3. Dense Layer 1 ($784 \to 128$ + ReLU) | $172,000$ | $1,023.8\,\mu\text{s}$ | $83.9\%$ |
-| 4. Dense Layer 2 ($128 \to 47$ Logits) | $10,800$ | $64.3\,\mu\text{s}$ | $5.3\%$ |
-| 5. ArgMax Prediction Extraction | $1,100$ | $6.5\,\mu\text{s}$ | $0.5\%$ |
-| **Total Neural Inference Time** | **$205,500$** | **$1.22\text{ ms}$** | **$100.0\%$** |
-| 6. LCD Graphic Screen Refresh | $320,000$ | $1.90\text{ ms}$ | — |
-| **Total Human-Perceptible Response** | **$525,500$** | **$3.12\text{ ms}$** | **$>30\times$ faster than human perception** |
+| 1. Center-of-Mass Normalization | 18,400 | 109.5 µs | 8.9% |
+| 2. EMNIST Matrix Transposition | 3,200 | 19.0 µs | 1.6% |
+| 3. Dense Layer 1 (784 -> 128 + ReLU) | 172,000 | 1,023.8 µs | 83.9% |
+| 4. Dense Layer 2 (128 -> 47 Logits) | 10,800 | 64.3 µs | 5.3% |
+| 5. ArgMax Prediction Extraction | 1,100 | 6.5 µs | 0.5% |
+| **Total Neural Inference Time** | **205,500** | **1.22 ms** | **100.0%** |
+| 6. LCD Graphic Screen Refresh | 320,000 | 1.90 ms | — |
+| **Total Human-Perceptible Response** | **525,500** | **3.12 ms** | **>30x faster than human perception** |
 
 ### Energy & Battery Autonomy Calculation
-Under $V_{\text{DD}} = 3.3\text{ V}$ at $168\text{ MHz}$, the STM32F429 draws $I_{\text{DD}} \approx 35\text{ mA}$ ($P = 115.5\text{ mW}$):
+Under V_DD = 3.3 V at 168 MHz, the STM32F429 draws I_DD ≈ 35 mA (P = 115.5 mW):
 
 $$E_{\text{inference}} = P \times t_{\text{inf}} = 115.5\text{ mW} \times 1.22\text{ ms} = \mathbf{141\ \mu\text{J}} \quad (0.141\text{ millijoules})$$
 
-On a standard $1,000\text{ mAh}$ ($3.7\text{ V} = 13,320\text{ Joules}$) Li-Ion battery:
+On a standard 1,000 mAh (3.7 V = 13,320 Joules) Li-Ion battery:
 $$\text{Total Inferences} = \frac{13,320\text{ J}}{0.000141\text{ J}} \approx \mathbf{94.4\text{ Million Inferences}}$$
 
 ---
@@ -262,10 +262,10 @@ $$\text{Total Inferences} = \frac{13,320\text{ J}}{0.000141\text{ J}} \approx \m
 
 | Criteria | Our Bare-Metal Engine | ST X-CUBE-AI | TensorFlow Lite Micro |
 |---|---|---|---|
-| **Software Dependencies** | **Zero ($100\%$ autonomous C99)** | Proprietary ST runtime | Heavy C++11 runtime |
-| **SRAM Consumption** | **$2.35\text{ KB}$** (Fixed buffers) | $\approx 8 - 12\text{ KB}$ | $> 15\text{ KB}$ (Tensor Arena) |
+| **Software Dependencies** | **Zero (100% autonomous C99)** | Proprietary ST runtime | Heavy C++11 runtime |
+| **SRAM Consumption** | **2.35 KB** (Fixed buffers) | ≈ 8 - 12 KB | > 15 KB (Tensor Arena) |
 | **Hardware Transparency** | **Direct register access** | Generated black-box code | Layered HAL / OS abstractions |
-| **Dynamic Allocation** | **Strictly $0\text{ bytes}$ (`malloc` banned)** | Sometimes required | Fixed arena |
+| **Dynamic Allocation** | **Strictly 0 bytes (`malloc` banned)** | Sometimes required | Fixed arena |
 | **Portability** | **Any ARM Cortex-M core** | STM32 ecosystem only | Generic C++ |
 
 ---

@@ -121,20 +121,42 @@ The model is trained on the NIST **EMNIST Balanced** split (112,800 training ima
 ### Mathematical Derivation of Symmetric Uniform PTQ
 To eliminate costly floating-point computations, weights (W) and inputs (X) are projected onto signed 8-bit integers [-128, 127]:
 
-$$S_W = \frac{\max |W|}{127}, \quad S_X = \frac{\max |X|}{127}, \quad S_B = S_W \cdot S_X$$
+
+$$
+S_W = \frac{\max |W|}{127}, \quad S_X = \frac{\max |X|}{127}, \quad S_B = S_W \cdot S_X
+$$
+
 
 The matrix multiplication Y = W * X + B becomes an integer dot product scaled by a constant factor:
 
-$$Y_j \approx (S_W \cdot S_X) \cdot \left[ \sum_{i=1}^{N} W_{q,ji} \cdot X_{q,i} + B_{q,j} \right]$$
+
+$$
+Y_j \approx (S_W \cdot S_X) \cdot \left[ \sum_{i=1}^{N} W_{q,ji} \cdot X_{q,i} + B_{q,j} \right]
+$$
+
 
 ### Mathematical Proof of Overflow Prevention on 32-bit Accumulators
 For the largest dense layer (N = 784 inputs), assuming maximum absolute saturation (|W_q| = 127, |X_q| = 127):
 
-$$\text{Worst-Case Value} = \sum_{i=1}^{784} (127 \times 127) = 784 \times 16,129 = \mathbf{12,644,736}$$
 
-$$\text{Maximum 32-bit Integer Capacity} = 2^{31} - 1 = \mathbf{2,147,483,647}$$
+$$
+\text{Worst-Case Value} = \sum_{i=1}^{784} (127 \times 127) = 784 \times 16,129 = \mathbf{12,644,736}
+$$
 
-$$\text{Saturation Ratio} = \frac{12,644,736}{2,147,483,647} \approx \mathbf{0.588\%}$$
+
+
+
+$$
+\text{Maximum 32-bit Integer Capacity} = 2^{31} - 1 = \mathbf{2,147,483,647}
+$$
+
+
+
+
+$$
+\text{Saturation Ratio} = \frac{12,644,736}{2,147,483,647} \approx \mathbf{0.588\%}
+$$
+
 
 > **Conclusion:** An arithmetic overflow on an ARM 32-bit accumulator is **mathematically impossible**.
 
@@ -181,9 +203,18 @@ Configures the Phase-Locked Loop from the external 8 MHz HSE crystal:
   <em>Figure 7: RM0090 Reference Manual Section 6.3.2 — Bitwise layout and division equations for <code>RCC_PLLCFGR</code>.</em>
 </p>
 
-$$f_{\text{VCO}} = f_{\text{HSE}} \times \left( \frac{\text{PLLN}}{\text{PLLM}} \right) = 8\text{ MHz} \times \left( \frac{336}{8} \right) = 336\text{ MHz}$$
 
-$$f_{\text{SYSCLK}} = \frac{f_{\text{VCO}}}{\text{PLLP}} = \frac{336\text{ MHz}}{2} = \mathbf{168\text{ MHz}}$$
+$$
+f_{\text{VCO}} = f_{\text{HSE}} \times \left( \frac{\text{PLLN}}{\text{PLLM}} \right) = 8\text{ MHz} \times \left( \frac{336}{8} \right) = 336\text{ MHz}
+$$
+
+
+
+
+$$
+f_{\text{SYSCLK}} = \frac{f_{\text{VCO}}}{\text{PLLP}} = \frac{336\text{ MHz}}{2} = \mathbf{168\text{ MHz}}
+$$
+
 
 ### 4. Flash Access Control & 5 Wait States
 Because Flash memory cannot be accessed in 1 cycle at 168 MHz, `FLASH_ACR` must be configured with **5 Wait States (5WS)** plus prefetch and cache buffers **before** switching the clock:
@@ -206,14 +237,28 @@ To prevent race conditions where Chip Select (`CSX`) is de-asserted before the l
 
 ### Scale Factor & Grid Projection (K = 7)
 The 240x320 TFT display allows a maximum square drawing area of 196x196 pixels (K = 7 scaling factor for 28x28 cells):
-$$\text{col} = \left\lfloor \frac{t_x - \text{BOX}_{\text{X}}}{7} \right\rfloor, \quad \text{row} = \left\lfloor \frac{t_y - \text{BOX}_{\text{Y}}}{7} \right\rfloor$$
+
+
+$$
+\text{col} = \left\lfloor \frac{t_x - \text{BOX}_X}{7} \right\rfloor, \quad \text{row} = \left\lfloor \frac{t_y - \text{BOX}_Y}{7} \right\rfloor
+$$
+
 
 ### Center-of-Mass (Barycenter) Normalization
 Calculates the spatial center of mass (center_r, center_c) and shifts the drawn character to the exact center (14, 14):
 
-$$M = \sum_{r=0}^{27} \sum_{c=0}^{27} I(r, c), \quad \bar{r} = \frac{1}{M}\sum r \cdot I(r, c), \quad \bar{c} = \frac{1}{M}\sum c \cdot I(r, c)$$
 
-$$\Delta r = 14 - \lfloor \bar{r} \rceil, \quad \Delta c = 14 - \lfloor \bar{c} \rceil$$
+$$
+M = \sum_{r=0}^{27} \sum_{c=0}^{27} I(r, c), \quad \bar{r} = \frac{1}{M}\sum r \cdot I(r, c), \quad \bar{c} = \frac{1}{M}\sum c \cdot I(r, c)
+$$
+
+
+
+
+$$
+\Delta r = 14 - \bar{r}, \quad \Delta c = 14 - \bar{c}
+$$
+
 
 ### EMNIST Transposition Correction
 The PyTorch `torchvision.datasets.EMNIST` loader stores images transposed by default . The engine applies matrix transposition `I_in[r][c] = I_norm[c][r]` to align finger drawings with the training domain.
@@ -251,10 +296,19 @@ The PyTorch `torchvision.datasets.EMNIST` loader stores images transposed by def
 ### Energy & Battery Autonomy Calculation
 Under V_DD = 3.3 V at 168 MHz, the STM32F429 draws I_DD ≈ 35 mA (P = 115.5 mW):
 
-$$E_{\text{inference}} = P \times t_{\text{inf}} = 115.5\text{ mW} \times 1.22\text{ ms} = \mathbf{141\ \mu\text{J}} \quad (0.141\text{ millijoules})$$
+
+$$
+E_{\text{inference}} = P \times t_{\text{inf}} = 115.5\text{ mW} \times 1.22\text{ ms} = \mathbf{141\ \mu\text{J}} \quad (0.141\text{ millijoules})
+$$
+
 
 On a standard 1,000 mAh (3.7 V = 13,320 Joules) Li-Ion battery:
-$$\text{Total Inferences} = \frac{13,320\text{ J}}{0.000141\text{ J}} \approx \mathbf{94.4\text{ Million Inferences}}$$
+
+
+$$
+\text{Total Inferences} = \frac{13,320\text{ J}}{0.000141\text{ J}} \approx \mathbf{94.4\text{ Million Inferences}}
+$$
+
 
 ---
 

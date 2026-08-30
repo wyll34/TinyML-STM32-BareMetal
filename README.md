@@ -223,7 +223,7 @@ The PyTorch `torchvision.datasets.EMNIST` loader stores images transposed by def
 ## Experimental Benchmarks & Energy Profile
 
 <p align="center">
-  <img src="assets/benchmark.png" alt="GCC Compilation and ARM Size Terminal Output" width="620">
+  <img src="assets/benchmark.png?raw=true" alt="GCC Compilation and ARM Size Terminal Output" width="620">
   <br>
   <em>Figure 9: Real terminal output — Full clean build with <code>make -B</code> and binary inspection via <code>arm-none-eabi-size</code>.</em>
 </p>

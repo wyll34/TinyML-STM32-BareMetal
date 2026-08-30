@@ -342,14 +342,6 @@ st-flash write main.hex 0x08000000
 
 ---
 
-## Author & Acknowledgments
-
-- **Author:** **M. Ilyas AIT OUAILAL** — *Embedded Systems & Edge AI Engineer*
-- **Institution:** Institut National des Postes et Télécommunications (**INPT / ANRT**)
-- **Host Organization:** **GNB SOLUTIONS**
-- **Supervisors:** M. Abdellah EL KAMILI, M. Abdelilah BOUJNAN
-
----
 
 <p align="center">
   <b> If you found this project helpful, feel free to give it a star on GitHub! </b>
